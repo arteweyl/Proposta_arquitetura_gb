@@ -5,9 +5,9 @@ para a parte de modelagem,segue o diagrama inicial proposto:
 
 O apresentável pode ser encontrado <a href='https://docs.google.com/presentation/d/1kUykvOltBTiCQaP4y33rc_RaKouyXTz4QfDGAecC35E/edit#slide=id.g2c6259c4439_0_14'>aqui</a>:
 
-Este Repositório Contem A solução de um Case scenário para uma implementação real 
+Este link Contem A solução de um Case scenário para uma implementação real 
 utilizando spark e gcp.
-![ETL caso Boticário (2)](https://github.com/arteweyl/desafio_gb_case2/assets/63889308/723e1f23-966c-4468-b343-acbc6b4cff3f)
+
 
 Para o  Case 2 Scenario Utilizamos Classes Criadas pra lidar com a manipulação de dados de diversos conectores.
 Passando aqui por diversos exemplos, utilizando buckets, serviço SQL do GCP com uma instância Postgres e muito mais.
