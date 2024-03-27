@@ -76,7 +76,6 @@ data_table_2 = {
 
 df1 = pd.DataFrame(data_table_1)
 df2 = pd.DataFrame(data_table_2)
-
 filtered_df = df2[df2['description'].str.contains('boticario', case=False)]
-print(filtered_df)
 print(df2)
+print(filtered_df)
