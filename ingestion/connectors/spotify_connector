@@ -1,0 +1,73 @@
+from dotenv import load_dotenv
+import requests
+import os
+import base64
+import json
+from pyspark.sql import SparkSession
+from pyspark.sql.types import StructType, StructField, StringType
+
+class SpotifyAPIConnector:
+    def __init__(self, spark_session):
+        load_dotenv('ingestion/.env')
+        self.client_id = os.getenv('CLIENT_ID')
+        self.client_secret = os.getenv('CLIENT_SECRET')
+        self.spark = spark_session
+        self.token = self.get_token()
+
+    def get_token(self):
+        auth_string = f"{self.client_id}:{self.client_secret}"
+        auth_bytes = auth_string.encode("ascii")
+        auth_base64 = str(base64.b64encode(auth_bytes), 'ascii')
+        url = "https://accounts.spotify.com/api/token"
+        headers = {
+            "Authorization": f"Basic {auth_base64}",
+            "Content-Type": "application/x-www-form-urlencoded"
+        }
+        data = {"grant_type": "client_credentials"}
+        result = requests.post(url=url, headers=headers, data=data)
+        json_result = json.loads(result.content)
+        token = json_result["access_token"]
+        return token
+
+    def get_auth_header(self):
+        return {'Authorization': 'Bearer ' + self.token}
+
+    def search_for_term(self, id):
+        url = "https://api.spotify.com/v1/search"
+        headers = self.get_auth_header()
+        query = f"?q={id}&type=show&market=BR&limit=1"
+        query_url = url + query
+        result = requests.get(query_url, headers=headers)
+        json_result = json.loads(result.content)['shows']['items']
+        return json_result
+
+    def get_episodes_by_show(self, show_id):
+        url = f'https://api.spotify.com/v1/shows/{show_id}/episodes?limit=50'
+        headers = self.get_auth_header()
+        result = requests.get(url, headers=headers)
+        json_result = json.loads(result.content)['items']
+        return json_result
+
+    def get_episodes_data(self, term):
+        buscas = self.search_for_term(term)
+        show_id = [busca['id'] for busca in buscas if busca is not None].pop()
+        episodes = self.get_episodes_by_show(show_id)
+
+        schema = StructType([
+            StructField("id", StringType(), True),
+            StructField("name", StringType(), True),
+            StructField("description", StringType(), True)
+        ])
+
+        data = [(episode['id'], episode['name'], episode['description']) for episode in episodes]
+        return self.spark.createDataFrame(data, schema)
+
+if __name__ == '__main__':
+    # Example of how to use the class with SparkSession
+    spark = SparkSession.builder \
+        .appName("Spotify API Connector") \
+        .getOrCreate()
+
+    connector = SpotifyAPIConnector(spark)
+    df = connector.get_episodes_data('Data%20Hackers')  # Note the space in 'Data%20Hackers' instead of 'Data%Hackers'
+    df.show()
