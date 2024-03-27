@@ -2,86 +2,78 @@ import requests
 import os
 import base64
 import json
-from pyspark.sql import SparkSession
-from pyspark.sql.types import StringType, StructType, StructField
+import pandas as pd
+from dotenv import load_dotenv
 
-class SpotifyAPIConnector:
-    def __init__(self, spark_session):
-        self.spark = spark_session
-        self.client_id = os.getenv('CLIENT_ID')
-        self.client_secret = os.getenv('CLIENT_SECRET')
-        self.token = self.get_token()
+"""Este aquivo existe para mostrar uma forma de resolução diferente utilizando pandas para esse caso específico
+"""
 
-    def get_token(self):
-        auth_string = f"{self.client_id}:{self.client_secret}"
-        auth_bytes = auth_string.encode("ascii")
-        auth_base64 = str(base64.b64encode(auth_bytes), 'ascii')
-        url = "https://accounts.spotify.com/api/token"
-        headers = {
-            "Authorization": f"Basic {auth_base64}",
-            "Content-Type": "application/x-www-form-urlencoded"
-        }
-        data = {"grant_type": "client_credentials"}
-        result = requests.post(url=url, headers=headers, data=data)
-        json_result = json.loads(result.content)
-        token = json_result["access_token"]
-        return token
 
-    def get_auth_header(self):
-        return {'Authorization': 'Bearer ' + self.token}
+load_dotenv('ingestion/.env')
 
-    def search_for_term(self, id):
-        url = "https://api.spotify.com/v1/search"
-        headers = self.get_auth_header()
-        query = f"?q={id}&type=show&market=BR&limit=1"
-        query_url = url + query
-        result = requests.get(query_url, headers=headers)
-        json_result = json.loads(result.content)['shows']['items']
-        return json_result
+client_id = os.getenv('CLIENT_ID')
+client_secret = os.getenv('CLIENT_SECRET')
 
-    def get_episodes_by_show(self, show_id):
-        url = f'https://api.spotify.com/v1/shows/{show_id}/episodes?&limit=113'
-        headers = self.get_auth_header()
-        result = requests.get(url, headers=headers)
-        json_result = json.loads(result.content)['items']
-        return json_result
 
-    def get_episodes_data_as_spark_df(self, term):
-        buscas = self.search_for_term(term)
-        show_id = [busca['id'] for busca in buscas if busca is not None].pop()
-        episodes = self.get_episodes_by_show(show_id)
-        
-        schema = StructType([
-            StructField("id", StringType(), True),
-            StructField("name", StringType(), True),
-            StructField("description", StringType(), True),
-            StructField("release_date", StringType(), True),
-            StructField("duration_ms", StringType(), True),
-            StructField("language", StringType(), True),
-            StructField("explicit", StringType(), True),
-            StructField("type", StringType(), True)
-        ])
-        
-        data = [{
-            'id': episode.get('id'),
-            'name': episode.get('name'),
-            'description': episode.get('description'),
-            'release_date': episode.get('release_date'),
-            'duration_ms': episode.get('duration_ms'),
-            'language': episode.get('language'),
-            'explicit': episode.get('explicit'),
-            'type': episode.get('type')
-        } for episode in episodes]
-        
-        df = self.spark.createDataFrame(data, schema=schema)
-        return df
+def get_token():
+    auth_string = client_id + ":" + client_secret
+    auth_bytes = auth_string.encode("ascii")
+    auth_base64 = str(base64.b64encode(auth_bytes),'ascii')
+    url = "https://accounts.spotify.com/api/token"
+    headers = {
+        "Authorization": f"Basic {auth_base64}",
+        "Content-Type": "application/x-www-form-urlencoded"
+    }
+    data = {"grant_type": "client_credentials"}
+    result = requests.request('POST', url=url, headers=headers, data=data)
+    json_result = json.loads(result.content)
+    token = json_result["access_token"]
+    return token
 
-# Create SparkSession
-spark = SparkSession.builder \
-    .appName("SpotifyAPIConnector") \
-    .getOrCreate()
+def get_auth_header(token):
+    return {'Authorization': 'Bearer ' + token }
 
-# Example of how to use the class
-connector = SpotifyAPIConnector(spark)
-df = connector.get_episodes_data_as_spark_df('Data%20Hackers')  # Note the space in 'Data%20Hackers' instead of 'Data%Hackers'
-df.show()
+def search_for_term(token,id):
+    url = "https://api.spotify.com/v1/search"
+    headers = get_auth_header(token)
+    query = f"?q={id}&type=show&market=BR&limit=1"
+    query_url = url + query
+    result = requests.get(query_url,headers=headers)
+    json_result = json.loads(result.content)['shows']['items']
+    return json_result
+
+def get_episodes_by_show(token,show_id):
+    url = f'https://api.spotify.com/v1/shows/{show_id}/episodes?&limit=50'
+    headers = get_auth_header(token)
+    result = requests.get(url,headers=headers)
+    json_result = json.loads(result.content)['items']
+    return json_result
+
+token = get_token()
+buscas=search_for_term(token,'Data%Hackers')
+show_id=[busca['id'] for busca in buscas if busca is not None ].pop()
+print(show_id)
+episodes = get_episodes_by_show(token,show_id)
+episodes
+
+
+data_table_1 = {
+    'id': [episode['id'] for episode in episodes],
+    'name': [episode['name'] for episode in episodes],
+    'description': [episode['description'] for episode in episodes],
+
+}
+data_table_2 = {
+    'id': [episode['id'] for episode in episodes],
+    'name': [episode['name'] for episode in episodes],
+    'description': [episode['description'] for episode in episodes],
+    'release_date': [episode['release_date'] for episode in episodes],
+    'duration_ms': [episode['duration_ms'] for episode in episodes],
+    'language': [episode['language'] for episode in episodes],
+    'explicit': [episode['explicit'] for episode in episodes],
+    'type': [episode['type'] for episode in episodes],
+}
+
+df1 = pd.DataFrame(data_table_1)
+df2 = pd.DataFrame(data_table_2)
+print(df2)
