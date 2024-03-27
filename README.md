@@ -12,7 +12,7 @@ utilizando spark e gcp.
 Para o  Case 2 Scenario Utilizamos Classes Criadas pra lidar com a manipulação de dados de diversos conectores.
 Passando aqui por diversos exemplos, utilizando buckets, serviço SQL do GCP com uma instância Postgres e muito mais.
 
-os itens 1,2,3,4 que tratam sobre ingestão e transformação, foram lidadas no arquivo ingestion.py.Vale lembrar que a base de dados de 2017 e 2018 veio com problemas.  sendo a 2017 na verdade uma duplicata da de 2019 e a de 2018 sendo a de 2017,fiz validações de assert no executável do ingestion. Segue as imagens do problema com as bases:
+os itens 1,2,3,4 que tratam sobre ingestão e transformação, foram lidadas no arquivo <a href='https://github.com/arteweyl/desafio_gb_case2/blob/main/ingestion.py'>ingestion.py</a>.Vale lembrar que a base de dados de 2017 e 2018 veio com problemas.  sendo a 2017 na verdade uma duplicata da de 2019 e a de 2018 sendo a de 2017,fiz validações de assert no executável do ingestion. Segue as imagens do problema com as bases:
 ![Screenshot_2](https://github.com/arteweyl/desafio_gb_case2/assets/63889308/40b7cbd4-902a-46ec-b6c1-86dd8700c114)
 ![base_2019](https://github.com/arteweyl/desafio_gb_case2/assets/63889308/adc02341-04d6-4f9d-812f-a25ccc7c5253)
 ![Base_2018_incongluencia](https://github.com/arteweyl/desafio_gb_case2/assets/63889308/3225e864-a26a-43d7-be3b-2ccd7e900ee9)
