@@ -1,4 +1,4 @@
-# desafio_gb_case
+# Proposta_arquitetura_gb
 
 para a parte de modelagem,segue o diagrama inicial proposto:
 ![ETL caso Boticário (2)](https://github.com/arteweyl/desafio_gb_case2/assets/63889308/723e1f23-966c-4468-b343-acbc6b4cff3f)
